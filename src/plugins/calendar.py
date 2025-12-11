@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional
 
 from src.plugins.base import Plugin
 from src.utils.logging_config import get_logger
@@ -42,7 +42,7 @@ class CalendarPlugin(Plugin):
         super().__init__()
         self.app: Any = None
         self._service = None
-        self._adapter: _AppAdapter | None = None
+        self._adapter: Optional[_AppAdapter] = None
 
     async def setup(self, app: Any) -> None:
         self.app = app

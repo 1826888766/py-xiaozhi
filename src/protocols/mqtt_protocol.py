@@ -12,6 +12,7 @@ from src.constants.constants import AudioConfig
 from src.protocols.protocol import Protocol
 from src.utils.config_manager import ConfigManager
 from src.utils.logging_config import get_logger
+from typing import Tuple
 
 # 配置日志
 logger = get_logger(__name__)
@@ -57,7 +58,7 @@ class MqttProtocol(Protocol):
         # 事件
         self.server_hello_event = asyncio.Event()
 
-    def _parse_endpoint(self, endpoint: str) -> tuple[str, int]:
+    def _parse_endpoint(self, endpoint: str) -> Tuple[str, int]:
         """解析endpoint字符串，提取主机和端口.
 
         Args:

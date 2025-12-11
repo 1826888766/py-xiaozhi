@@ -1,6 +1,6 @@
 [tool.black]
 line-length = 88
-target-version = ['py39']
+target-version = ['py38']
 include = '\.pyi?$'
 # 确保复杂表达式会被适当换行
 extend-exclude = '''

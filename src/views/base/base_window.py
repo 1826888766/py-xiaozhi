@@ -7,9 +7,6 @@
 import asyncio
 from typing import Optional
 
-from PyQt5.QtCore import QTimer, pyqtSignal
-from PyQt5.QtWidgets import QMainWindow, QWidget
-
 from src.utils.logging_config import get_logger
 
 logger = get_logger(__name__)

@@ -1,6 +1,6 @@
 import asyncio
 import os
-from typing import Any
+from typing import Any, Optional
 
 from src.audio_codecs.audio_codec import AudioCodec
 from src.plugins.base import Plugin
@@ -19,7 +19,7 @@ class AudioPlugin(Plugin):
     def __init__(self) -> None:
         super().__init__()
         self.app = None
-        self.codec: AudioCodec | None = None
+        self.codec: Optional[AudioCodec] = None
         self._main_loop = None
         self._send_sem = asyncio.Semaphore(MAX_CONCURRENT_AUDIO_SENDS)
         self._in_silence_period = False  # 静默期标志，用于防止TTS尾音被捕获

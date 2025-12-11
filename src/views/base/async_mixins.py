@@ -5,7 +5,6 @@
 
 import asyncio
 
-from PyQt5.QtCore import QObject, pyqtSignal
 
 from src.utils.logging_config import get_logger
 

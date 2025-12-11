@@ -7,7 +7,7 @@ applescript==2021.2.9; sys_platform == "darwin"  # macOS音量控制
 
 # 二进制/系统库敏感
 cryptography==44.0.1
-numpy==1.26.4
+numpy==1.23.5
 sounddevice>=0.4.4
 pygame==2.6.1
 PyQt5==5.15.11
@@ -40,3 +40,5 @@ tzdata
 pyinstaller==6.15.0
 rich==14.1.0
 packaging==25.0
+typing_extensions>=4.12.2; python_version < "3.10"
+backports.zoneinfo; python_version < "3.9"

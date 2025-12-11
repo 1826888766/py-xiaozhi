@@ -6,7 +6,7 @@ import sys
 import termios
 import tty
 from collections import deque
-from typing import Callable, Optional
+from typing import Callable, Optional, Deque, List
 
 from src.display.base_display import BaseDisplay
 
@@ -51,7 +51,7 @@ class CliDisplay(BaseDisplay):
         self.command_queue = asyncio.Queue()
 
         # 日志缓冲（只在 CLI 顶部显示，不直接打印到控制台）
-        self._log_lines: deque[str] = deque(maxlen=6)
+        self._log_lines: Deque[str] = deque(maxlen=6)
         self._install_log_handler()
 
     async def set_callbacks(
@@ -178,13 +178,26 @@ class CliDisplay(BaseDisplay):
                     pass
 
         root = logging.getLogger()
-        # 移除直接写 stdout/stderr 的处理器，避免覆盖渲染
+        # 仅移除写入 stdout 的处理器，保留/改用 stderr 输出，避免覆盖界面渲染
         for h in list(root.handlers):
-            if isinstance(h, logging.StreamHandler) and getattr(h, "stream", None) in (
-                sys.stdout,
-                sys.stderr,
-            ):
+            if isinstance(h, logging.StreamHandler) and getattr(h, "stream", None) is sys.stdout:
                 root.removeHandler(h)
+
+        # 若不存在写入 stderr 的控制台处理器，则补充一个，确保终端可见日志
+        has_stderr = any(
+            isinstance(h, logging.StreamHandler) and getattr(h, "stream", None) is sys.stderr
+            for h in root.handlers
+        )
+        if not has_stderr:
+            stderr_handler = logging.StreamHandler(stream=sys.stderr)
+            stderr_handler.setLevel(logging.INFO)
+            stderr_handler.setFormatter(
+                logging.Formatter(
+                    fmt="%(asctime)s [%(name)s] - %(levelname)s - %(message)s",
+                    datefmt="%Y-%m-%d %H:%M:%S",
+                )
+            )
+            root.addHandler(stderr_handler)
 
         handler = _DisplayLogHandler(self)
         handler.setLevel(logging.WARNING)
@@ -260,7 +273,7 @@ class CliDisplay(BaseDisplay):
         old_settings = termios.tcgetattr(fd)
         try:
             tty.setraw(fd)
-            buffer: list[str] = []
+            buffer: List[str] = []
             while True:
                 ch = os.read(fd, 4)  # 读取最多4字节，足够覆盖常见UTF-8中文
                 if not ch:

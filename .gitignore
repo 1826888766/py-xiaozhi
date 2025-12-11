@@ -6,6 +6,7 @@
 
 .idea/
 venv/
+venv38/
 
 # 音乐缓存
 cache/

@@ -1,4 +1,5 @@
 import logging
+import sys
 from logging.handlers import TimedRotatingFileHandler
 
 from colorlog import ColoredFormatter
@@ -27,7 +28,7 @@ def setup_logging():
         root_logger.handlers.clear()
 
     # 创建控制台处理器
-    console_handler = logging.StreamHandler()
+    console_handler = logging.StreamHandler(stream=sys.stdout)
     console_handler.setLevel(logging.INFO)
 
     # 创建按天切割的文件处理器
@@ -88,6 +89,27 @@ def get_logger(name):
         logger.error("出错了: %s", error_msg)
     """
     logger = logging.getLogger(name)
+    root = logging.getLogger()
+    if not root.handlers:
+        h = logging.StreamHandler(stream=sys.stderr)
+        h.setLevel(logging.INFO)
+        h.setFormatter(
+            ColoredFormatter(
+                "%(green)s%(asctime)s%(reset)s[%(blue)s%(name)s%(reset)s] - "
+                "%(log_color)s%(levelname)s%(reset)s - %(green)s%(message)s%(reset)s - "
+                "%(cyan)s%(threadName)s%(reset)s",
+                log_colors={
+                    "DEBUG": "cyan",
+                    "INFO": "white",
+                    "WARNING": "yellow",
+                    "ERROR": "red",
+                    "CRITICAL": "red,bg_white",
+                },
+                secondary_log_colors={"asctime": {"green": "green"}, "name": {"blue": "blue"}},
+            )
+        )
+        root.addHandler(h)
+        root.setLevel(logging.INFO)
 
     # 添加一些辅助方法
     def log_error_with_exc(msg, *args, **kwargs):

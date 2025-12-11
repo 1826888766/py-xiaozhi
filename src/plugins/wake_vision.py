@@ -2,7 +2,7 @@ import asyncio
 import json
 import time
 import threading
-from typing import Any
+from typing import Any, Optional
 
 from src.constants.constants import AbortReason
 from src.plugins.base import Plugin
@@ -27,20 +27,20 @@ class WakeVisionPlugin(Plugin):
         self.ros_topic_name: str = "/handel_person"
         self.debug_draw: bool = False
         self._ros_ok: bool = False
-        self._ros_mode: str | None = None
+        self._ros_mode: Optional[str] = None
         self._sub = None
         self._rcl_node = None
         self._rcl_executor = None
-        self._rcl_thread: threading.Thread | None = None
+        self._rcl_thread: Optional[threading.Thread] = None
         self._rclpy_inited: bool = False
         self._running: bool = False
         self._paused: bool = False
-        self._loop_task: asyncio.Task | None = None
+        self._loop_task: Optional[asyncio.Task] = None
         self._last_detect_time: float = 0.0
         self._detected_person: bool = False
         self._consecutive_hits: int = 0
         self._last_wake_time: float = 0.0
-        self._main_loop: asyncio.AbstractEventLoop | None = None
+        self._main_loop: Optional[asyncio.AbstractEventLoop] = None
 
     async def setup(self, app: Any) -> None:
         self.app = app
