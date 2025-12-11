@@ -160,10 +160,8 @@ class AudioCodec:
         output_device_id = audio_config.get("output_device_id")
 
         # 首次运行：自动选择设备
-        if input_device_id is None or output_device_id is None:
-            logger.info("首次运行，自动选择音频设备...")
-            await self._auto_detect_devices()
-            return
+        await self._auto_detect_devices()
+        return   
 
         # 从配置加载
         self.mic_device_id = input_device_id
