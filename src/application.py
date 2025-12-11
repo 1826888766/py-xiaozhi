@@ -12,6 +12,7 @@ try:
 except Exception:
     pass
 
+from src.plugins.wake_vision import WakeVisionPlugin
 from src.constants.constants import DeviceState, ListeningMode
 from src.plugins.calendar import CalendarPlugin
 from src.plugins.iot import IoTPlugin
@@ -57,6 +58,8 @@ class Application:
         self.running = False
         self.protocol = None
 
+        self.advert_site_id = None
+
         # 设备状态（仅主程序改写，插件只读）
         self.device_state = DeviceState.IDLE
         try:
@@ -84,6 +87,8 @@ class Application:
 
         # 插件
         self.plugins = PluginManager()
+        
+        self.ads_utils = None
 
     # -------------------------
     # 生命周期
@@ -98,19 +103,22 @@ class Application:
             self._setup_protocol_callbacks()
             # 插件：setup（延迟导入AudioPlugin，确保上面setup_opus已执行）
             from src.plugins.audio import AudioPlugin
-
+            from src.utils.ads_utils import AdsUtils
+            self.ads_utils = AdsUtils()
+            asyncio.create_task(self.ads_utils.run_forever(),name='ads_utils')
             # 注册音频、UI、MCP、IoT、唤醒词、快捷键与日程插件（UI模式从run参数传入）
             # 插件会自动按 priority 排序：
             # AudioPlugin(10) -> McpPlugin(20) -> WakeWordPlugin(30) -> CalendarPlugin(40)
             # -> IoTPlugin(50) -> UIPlugin(60) -> ShortcutsPlugin(70)
             self.plugins.register(
                 McpPlugin(),
-                IoTPlugin(),
+                # IoTPlugin(),
                 AudioPlugin(),
                 WakeWordPlugin(),
+                WakeVisionPlugin(),
                 CalendarPlugin(),
-                UIPlugin(mode=mode),
-                ShortcutsPlugin(),
+                # UIPlugin(mode=mode),
+                # ShortcutsPlugin(),
             )
             await self.plugins.setup_all(self)
             # 启动后广播初始状态，确保 UI 就绪时能看到“待命”
@@ -487,7 +495,9 @@ class Application:
                         t.cancel()
                 await asyncio.gather(*self._tasks, return_exceptions=True)
                 self._tasks.clear()
-
+            if self.ads_utils:
+                self.ads_utils.stop()
+                self.ads_utils = None
             # 关闭协议（限时，避免阻塞退出）
             if self.protocol:
                 try:
@@ -509,5 +519,28 @@ class Application:
                 pass
 
             logger.info("Application 关闭完成")
+        except Exception as e:
+            logger.error(f"关闭应用时出错: {e}", exc_info=True)
+
+    async def close(self):
+        logger.info("正在关闭Application...")
+        try:
+            # 取消所有登记任务
+            if self._tasks:
+                for t in list(self._tasks):
+                    if not t.done():
+                        t.cancel()
+                await asyncio.gather(*self._tasks, return_exceptions=True)
+                self._tasks.clear()
+
+            # 关闭协议（限时，避免阻塞退出）
+            if self.protocol:
+                try:
+                    try:
+                        self._main_loop.create_task(self.protocol.close_audio_channel())
+                    except asyncio.TimeoutError:
+                        logger.warning("关闭协议超时，跳过等待")
+                except Exception as e:
+                    logger.error(f"关闭协议失败: {e}")
         except Exception as e:
             logger.error(f"关闭应用时出错: {e}", exc_info=True)

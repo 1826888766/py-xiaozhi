@@ -80,7 +80,7 @@ class Ota:
             },
             "board": {
                 "type": SystemConstants.BOARD_TYPE,
-                "name": SystemConstants.APP_NAME,
+                "name": SystemConstants.APP_NAME + self.config.get_config("SYSTEM_OPTIONS.ROBOT_ID"),
                 "ip": self.local_ip,
                 "mac": self.mac_addr,
             },

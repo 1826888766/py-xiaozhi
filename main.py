@@ -17,7 +17,7 @@ def parse_args():
     parser.add_argument(
         "--mode",
         choices=["gui", "cli"],
-        default="gui",
+        default="cli",
         help="运行模式：gui(图形界面) 或 cli(命令行)",
     )
     parser.add_argument(
@@ -45,6 +45,7 @@ async def handle_activation(mode: str) -> bool:
     """
     try:
         from src.core.system_initializer import SystemInitializer
+ 
 
         logger.info("开始设备激活流程检查...")
 
@@ -64,6 +65,7 @@ async def start_app(mode: str, protocol: str, skip_activation: bool) -> int:
     启动应用的统一入口（在已有事件循环中执行）.
     """
     logger.info("启动小智AI客户端")
+    # 启动广告队列
 
     # 处理激活流程
     if not skip_activation:

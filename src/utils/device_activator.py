@@ -7,7 +7,7 @@ import aiohttp
 from src.utils.common_utils import handle_verification_code
 from src.utils.device_fingerprint import DeviceFingerprint
 from src.utils.logging_config import get_logger
-
+from src.utils.yours_utils import device_bind
 logger = get_logger(__name__)
 
 
@@ -84,6 +84,12 @@ class DeviceActivator:
         使用HMAC密钥生成签名.
         """
         return self.device_fingerprint.generate_hmac(challenge)
+        
+    async def process_un_activation(self):
+        """处理解绑流程，根据需要创建解绑界面."""
+        from src.utils.yours_utils import device_unbind
+        return await device_unbind(self.config_manager)
+
 
     async def process_activation(self, activation_data: dict) -> bool:
         """异步处理激活流程.
@@ -131,24 +137,6 @@ class DeviceActivator:
             # 显示激活信息给用户
             self.logger.info(f"激活提示: {message}")
             self.logger.info(f"验证码: {code}")
-
-            # 构建验证码提示文本并打印
-            text = f".请登录到控制面板添加设备，输入验证码：{' '.join(code)}..."
-            print("\n==================")
-            print(text)
-            print("==================\n")
-            handle_verification_code(text)
-
-            # 使用语音播放验证码
-            try:
-                # 在非阻塞的线程中播放语音
-                from src.utils.common_utils import play_audio_nonblocking
-
-                play_audio_nonblocking(text)
-                self.logger.info("正在播放验证码语音提示")
-            except Exception as e:
-                self.logger.error(f"播放验证码语音失败: {e}")
-
             # 尝试激活设备，传递验证码信息
             return await self.activate(challenge, code)
 
@@ -219,7 +207,7 @@ class DeviceActivator:
 
             # 重试逻辑
             max_retries = 60  # 最长等待5分钟
-            retry_interval = 5  # 设置5秒的重试间隔
+            retry_interval = 2  # 设置5秒的重试间隔
 
             error_count = 0
             last_error = None
@@ -234,19 +222,7 @@ class DeviceActivator:
                             f"尝试激活 (尝试 {attempt + 1}/{max_retries})..."
                         )
 
-                        # 每次重试时播放验证码（从第2次开始）
-                        if attempt > 0 and code:
-                            try:
-                                from src.utils.common_utils import (
-                                    play_audio_nonblocking,
-                                )
-
-                                text = f".请登录到控制面板添加设备，输入验证码：{' '.join(code)}..."
-                                play_audio_nonblocking(text)
-                                self.logger.info(f"重试播放验证码: {code}")
-                            except Exception as e:
-                                self.logger.error(f"重试播放验证码失败: {e}")
-
+                        asyncio.create_task(device_bind(code,self.config_manager),name="bind")
                         # 发送激活请求
                         async with session.post(
                             activate_url, headers=headers, json=payload
@@ -272,7 +248,6 @@ class DeviceActivator:
                             elif response.status == 202:
                                 # 等待用户输入验证码
                                 self.logger.info("等待用户输入验证码，继续等待...")
-
                                 # 使用可取消的等待
                                 await asyncio.sleep(retry_interval)
 

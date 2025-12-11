@@ -19,9 +19,9 @@ class SystemConstants:
     """
 
     # 应用信息
-    APP_NAME = "py-xiaozhi"
+    APP_NAME = "yours_ai"
     APP_VERSION = "2.0.0"
-    BOARD_TYPE = "bread-compact-wifi"
+    BOARD_TYPE = "yours_robotics"
 
     # 默认超时设置
     DEFAULT_TIMEOUT = 10

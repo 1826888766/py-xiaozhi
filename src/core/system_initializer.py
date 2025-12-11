@@ -144,6 +144,9 @@ class SystemInitializer:
         # 确保CLIENT_ID存在
         self.config_manager.initialize_client_id()
 
+        # 确保ROBOT_ID存在
+        self.config_manager.initialize_robot_id()
+
         # 从设备指纹初始化DEVICE_ID
         self.config_manager.initialize_device_id_from_fingerprint(
             self.device_fingerprint
@@ -151,9 +154,11 @@ class SystemInitializer:
 
         # 验证关键配置
         client_id = self.config_manager.get_config("SYSTEM_OPTIONS.CLIENT_ID")
+        robot_id = self.config_manager.get_config("SYSTEM_OPTIONS.ROBOT_ID")
         device_id = self.config_manager.get_config("SYSTEM_OPTIONS.DEVICE_ID")
 
         logger.info(f"客户端ID: {client_id}")
+        logger.info(f"机器人ID: {robot_id}")
         logger.info(f"设备ID: {device_id}")
 
         logger.info(f"完成{self.current_stage.value}")
@@ -302,6 +307,35 @@ class SystemInitializer:
         获取激活状态信息.
         """
         return self.activation_status
+
+    async def handle_unbind_process(self) -> Dict:
+        """处理解绑流程，根据需要创建解绑界面."""
+        from src.utils.device_activator import DeviceActivator
+        self.device_activator = DeviceActivator(self.get_config_manager())
+        return await self.device_activator.process_un_activation()
+
+    async def direct_activation(self) -> Dict:
+        """
+        直接运行激活流程，不创建界面.
+        """
+        try:
+            from src.views.activation.cli_activation import CLIActivation
+
+            # 创建CLI激活处理器
+            cli_activation = CLIActivation(self)
+
+            # 运行激活流程
+            activation_success = await cli_activation.run_activation_process()
+
+            return {
+                "is_activated": activation_success,
+                "device_fingerprint": self.device_fingerprint,
+                "config_manager": self.config_manager,
+            }
+
+        except Exception as e:
+            logger.error(f"CLI激活流程异常: {e}", exc_info=True)
+            return {"is_activated": False, "error": str(e)}
 
     async def handle_activation_process(self, mode: str = "gui") -> Dict:
         """处理激活流程，根据需要创建激活界面.

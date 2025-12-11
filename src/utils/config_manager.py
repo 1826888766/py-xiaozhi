@@ -1,7 +1,7 @@
 import json
 import uuid
 from typing import Any, Dict
-
+from pathlib import Path
 from src.utils.logging_config import get_logger
 from src.utils.resource_finder import resource_finder
 
@@ -18,6 +18,7 @@ class ConfigManager:
         "SYSTEM_OPTIONS": {
             "CLIENT_ID": None,
             "DEVICE_ID": None,
+            "ROBOT_ID": None,
             "NETWORK": {
                 "OTA_VERSION_URL": "https://api.tenclass.net/xiaozhi/ota/",
                 "WEBSOCKET_URL": None,
@@ -245,11 +246,38 @@ class ConfigManager:
             logger.error(f"配置重新加载失败: {e}")
             return False
 
+    def get_robot_id(self) -> str:
+        """
+        生成 UUID v4.
+        """
+        ### 获取用户根目录
+        ## 读取文件 ~/.yours_config/param.json
+        param_file = Path.home() / ".yours_robot" / "robot_params.json"
+        if param_file.exists():
+            param = json.loads(param_file.read_text(encoding="utf-8"))
+            client_id = param.get("DeviceName")
+            if client_id:
+                return client_id
+        
+        return "A0001"
+    
     def generate_uuid(self) -> str:
         """
         生成 UUID v4.
         """
         return str(uuid.uuid4())
+
+    def initialize_robot_id(self):
+        """
+        确保存在机器人ID.
+        """
+        if not self.get_config("SYSTEM_OPTIONS.ROBOT_ID"):
+            robot_id = self.get_robot_id()
+            success = self.update_config("SYSTEM_OPTIONS.ROBOT_ID", robot_id)
+            if success:
+                logger.info(f"已生成新的机器人ID: {robot_id}")
+            else:
+                logger.error("保存新的机器人ID失败")
 
     def initialize_client_id(self):
         """
