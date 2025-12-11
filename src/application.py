@@ -500,7 +500,7 @@ class Application:
                 await asyncio.gather(*self._tasks, return_exceptions=True)
                 self._tasks.clear()
             if self.ads_utils:
-                self.ads_utils.stop()
+                await self.ads_utils.stop()
                 self.ads_utils = None
             # 关闭协议（限时，避免阻塞退出）
             if self.protocol:
