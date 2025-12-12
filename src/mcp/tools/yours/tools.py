@@ -30,6 +30,8 @@ _open_event = threading.Event()     # 盖子打开事件（open_status==0）
 _motion_event = threading.Event()   # 任务状态反馈事件（/scheduled_tasks/ctrl_status）
 _motion_success: bool = False       # 任务是否成功
 
+play_text: str = ""
+
 
 # -----------------------------
 # 工具：无阻塞地调度协程（无事件循环则开线程跑）
@@ -162,12 +164,14 @@ def command_callback(msg_data: String) -> None:
 def chat_audio_callback(msg: String) -> None:
     """处理聊天音频文本消息。"""
     try:
+        global play_text
         from src.application import Application
         app = Application.get_instance()
         data = (msg.data or "").strip()
         if not data:
             return
-        app._main_loop.create_task(app._send_text_tts(data), name="chat_audio_tts")
+        play_text = f"请原样复述：{data}"
+        app._main_loop.create_task(app._send_text_tts("play audio task"), name="chat_audio_tts")
         logger.info(f"收到聊天音频文本: {data}")
         # 这里可以添加处理逻辑，例如将文本转换为语音
     except Exception as e:
@@ -176,13 +180,14 @@ def chat_audio_callback(msg: String) -> None:
 def audio_callback(msg: String) -> None:
     """处理音频播放消息。"""
     try:
+        global play_text
         from src.application import Application
         app = Application.get_instance()
         data = (msg.data or "").strip()
         if not data:
             return
-        
-        app._main_loop.create_task(app._send_text_tts(f"请原样复述：{data}"), name="audio_tts")
+        play_text = f"请原样复述：{data}"
+        app._main_loop.create_task(app._send_text_tts("play audio task"), name="audio_tts")
         logger.info(f"收到音频播放指令: {data}")
         # 这里可以添加播放逻辑，例如调用系统音频播放命令
     except Exception as e:
@@ -366,6 +371,11 @@ async def ads_change(args: Dict[str, Any]) -> str:
         error_msg = f"切换广告失败: {e}"
         logger.error(f"[YoursTools] {error_msg}", exc_info=True)
         return json.dumps({"success": False, "message": error_msg}, ensure_ascii=False)
+
+async def get_audio_play(args: Dict[str, Any]) -> str:
+    """播放音频文件。非阻塞：使用线程执行耗时操作。"""
+    _play_text = f"{play_text}"
+    return json.dumps({"success": True, "message": _play_text}, ensure_ascii=False)
 
 
 async def set_volume(args: Dict[str, Any]) -> str:
