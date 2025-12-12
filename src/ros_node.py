@@ -27,7 +27,7 @@ class RosNode:
         try:
             import rospy
             self.ros_mode = "ros1"
-            rospy.init_node(self.ros_node_name, anonymous=False, disable_signals=True)
+            rospy.init_node(self.ros_node_name, disable_signals=True)
             logger.info(f"auto-initialized rospy node: {self.ros_node_name}")
             self.ros_ok = True
             return
