@@ -85,7 +85,7 @@ class YoursToolManager:
         add_tool(
             (
                 "yours.get_audio_play",
-                "Play audio task."
+                "get_audio_play."
                 "return json format: {\"reason\": \"return the reason\", \"question\": \"user question\"}",
                 audio_play_props,
                 get_audio_play
