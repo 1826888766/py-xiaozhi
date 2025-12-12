@@ -81,15 +81,11 @@ class YoursToolManager:
         """
         注册音频播放工具.
         """
-        audio_play_props = PropertyList(
-            [
-                Property("play_text", PropertyType.STRING),
-            ]
-        )
+        audio_play_props = PropertyList()
         add_tool(
             (
                 "yours.get_audio_play",
-                "play audio task",
+                "Play audio task. ",
                 audio_play_props,
                 get_audio_play
             )
