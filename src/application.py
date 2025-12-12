@@ -89,7 +89,7 @@ class Application:
         self.plugins = PluginManager()
         
         self.ads_utils = None
-
+        self.ros_ok = False
         self.ros_mode = None
         self.ros_node_name = "yours_ai"
 
