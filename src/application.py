@@ -128,7 +128,7 @@ class Application:
                 # ShortcutsPlugin(),
             )
             # 启动ADS Utils
-            threading.Thread(target=self.ads_utils.run_forever(), daemon=True).start()
+            await self.ads_utils.run_forever()
             await self.plugins.setup_all(self)
             # 启动后广播初始状态，确保 UI 就绪时能看到“待命”
             try:

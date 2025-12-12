@@ -190,11 +190,10 @@ class AdsUtils:
         except Exception:
             pass
 
-    def run_forever(self) -> None:
+    async def run_forever(self) -> None:
         self.logger = get_logger(__name__)
         self.logger.info("开始运行广告工具函数")
         try:
-            loop = asyncio.get_running_loop()
-            loop.create_task(self.start()) 
+            asyncio.create_task(self.start(), name="ads_consume")
         except Exception as e:
             self.logger.error(f"RabbitMQ 连接失败: {e}")
