@@ -3,7 +3,7 @@
 提供延迟执行命令的倒计时器功能，支持AI模型状态查询和反馈
 """
 
-from .manger import get_yours_manager
+from .manager import get_yours_manager
 
 from .tools import (
     open_lid,

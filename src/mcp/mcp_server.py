@@ -266,6 +266,12 @@ class McpServer:
         timer_manager = get_timer_manager()
         timer_manager.init_tools(self.add_tool, PropertyList, Property, PropertyType)
 
+        # 添加小车工具
+        from src.mcp.tools.yours import get_yours_manager
+
+        yours_manager = get_yours_manager()
+        yours_manager.init_tools(self.add_tool, PropertyList, Property, PropertyType)
+
         # 添加摄像头工具
         from src.mcp.tools.camera import take_photo
 
@@ -298,11 +304,7 @@ class McpServer:
             )
         )
 
-        # 添加小车工具
-        from src.mcp.tools.yours import get_yours_manager
 
-        search_manager = get_yours_manager()
-        search_manager.init_tools(self.add_tool, PropertyList, Property, PropertyType)
 
         # 恢复原有工具
         self.tools.extend(original_tools)

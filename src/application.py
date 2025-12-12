@@ -154,10 +154,8 @@ class Application:
         try:
             import rospy
             self.ros_mode = "ros1"
-            if not rospy.core.is_initialized():
-                rospy.init_node(self.ros_node_name, anonymous=False, disable_signals=True)
-                logger.info(f"[{self.name}] auto-initialized rospy node: {self.ros_node_name}")
-
+            rospy.init_node(self.ros_node_name, anonymous=False, disable_signals=True)
+            logger.info(f"[{self.name}] auto-initialized rospy node: {self.ros_node_name}")
             self.ros_ok = True
             return
         except ImportError:
