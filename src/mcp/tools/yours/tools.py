@@ -17,22 +17,6 @@ import aiohttp
 from std_msgs.msg import UInt32, String
 from yours_ai.utils.logging_config import get_logger
 
-try:
-    import rospy  # type: ignore
-except Exception:
-    rospy = None  # type: ignore
-
-try:
-    import rclpy  # type: ignore
-    from rclpy.node import Node as _RclpyNode  # type: ignore
-    from rclpy.executors import SingleThreadedExecutor as _RclpyExecutor  # type: ignore
-    from rclpy.qos import QoSProfile as _QoSProfile  # type: ignore
-except Exception:
-    rclpy = None  # type: ignore
-    _RclpyNode = None  # type: ignore
-    _RclpyExecutor = None  # type: ignore
-    _QoSProfile = None  # type: ignore
-
 logger = get_logger(__name__)
 
 # -----------------------------
@@ -76,72 +60,51 @@ def _notify(message: str) -> None:
 # ROS 兼容层与回调
 # -----------------------------
 
-_ros2_node = None
-_ros2_executor = None
-
-
-def _init_ros2_if_needed() -> None:
-    global _ros2_node, _ros2_executor
-    if rospy is not None:
-        return
-    if rclpy is None:
-        return
-    if _ros2_node is None:
-        try:
-            if not rclpy.ok():
-                rclpy.init(args=None)
-        except Exception:
-            try:
-                rclpy.init(args=None)
-            except Exception:
-                return
-        _ros2_node = rclpy.create_node("mcp_tools")
-        _ros2_executor = _RclpyExecutor()
-        _ros2_executor.add_node(_ros2_node)
-        threading.Thread(target=_ros2_executor.spin, daemon=True).start()
-
-
-def _log_info(msg: str) -> None:
-    try:
-        if rospy is not None:
-            rospy.loginfo(msg)
-            return
-        if _ros2_node is not None:
-            _ros2_node.get_logger().info(msg)
-            return
-    except Exception:
-        pass
-    logger.info(msg)
-
-
 def _create_publisher(topic: str, msg_type: Any):
-    if rospy is not None:
+    app = Application.get_instance()
+    if not app.ros_ok:
+        return None
+    if app.ros_mode == "ros1":
+        import rospy
         return rospy.Publisher(topic, msg_type, queue_size=1)
-    _init_ros2_if_needed()
-    if _ros2_node is not None:
+    if app.ros_mode == "ros2":
+        import rclpy
+        _QoSProfile = rclpy.qos.QoSProfile if rclpy.qos is not None else None
         qos = _QoSProfile(depth=10) if _QoSProfile is not None else 10
+
+        _ros2_node = app.get_ros_node()
         return _ros2_node.create_publisher(msg_type, topic, qos)
     return None
 
 
 def _create_subscription(topic: str, msg_type: Any, callback):
-    if rospy is not None:
+    app = Application.get_instance()
+    if not app.ros_ok:
+        return None
+    if app.ros_mode == "ros1":
+        import rospy
         return rospy.Subscriber(topic, msg_type, callback)
-    _init_ros2_if_needed()
-    if _ros2_node is not None:
+    if app.ros_mode == "ros2":
+        import rclpy
+        _QoSProfile = rclpy.qos.QoSProfile if rclpy.qos is not None else None
         qos = _QoSProfile(depth=10) if _QoSProfile is not None else 10
+
+        _ros2_node = app.get_ros_node()
         return _ros2_node.create_subscription(msg_type, topic, callback, qos)
     return None
 
 
 async def _wait_for_message(topic: str, msg_type: Any, timeout: Optional[float] = None):
-    if rospy is not None:
-        return await asyncio.to_thread(rospy.wait_for_message, topic, msg_type, timeout)
-    _init_ros2_if_needed()
-    if _ros2_node is None:
+    app = Application.get_instance()
+    if not app.ros_ok:
         raise RuntimeError("ROS unavailable")
-    event = threading.Event()
-    holder: Dict[str, Any] = {"msg": None}
+    if app.ros_mode == "ros1":
+        import rospy
+        return await asyncio.to_thread(rospy.wait_for_message, topic, msg_type, timeout)
+    if app.ros_mode == "ros2":
+        _ros2_node = app.get_ros_node()
+        event = threading.Event()
+        holder: Dict[str, Any] = {"msg": None}
 
     def _cb(msg):
         holder["msg"] = msg

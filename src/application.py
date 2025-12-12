@@ -90,6 +90,9 @@ class Application:
         
         self.ads_utils = None
 
+        self.ros_mode = None
+        self.ros_node_name = "yours_ai"
+
     # -------------------------
     # 生命周期
     # -------------------------
@@ -102,6 +105,7 @@ class Application:
             
             self._main_loop = asyncio.get_running_loop()
             self._initialize_async_objects()
+            self._setup_ros()
             self._set_protocol(protocol)
             self._setup_protocol_callbacks()
             # 插件：setup（延迟导入AudioPlugin，确保上面setup_opus已执行）
@@ -145,6 +149,45 @@ class Application:
                 await self.shutdown()
             except Exception as e:
                 logger.error(f"关闭应用时出错: {e}")
+
+    async def _setup_ros() -> None:
+        try:
+            import rospy
+            self.ros_mode = "ros1"
+            if not rospy.core.is_initialized():
+                rospy.init_node(self.ros_node_name, anonymous=False, disable_signals=True)
+                logger.info(f"[{self.name}] auto-initialized rospy node: {self.ros_node_name}")
+
+            self.ros_ok = True
+            return
+        except ImportError:
+            pass
+        except Exception as e:
+            logger.error(f"[{self.name}] ROS1 setup error: {e}", exc_info=True)
+
+        try:
+            import rclpy
+            from rclpy.node import Node
+            from rclpy.executors import SingleThreadedExecutor
+
+            self.ros_mode = "ros2"
+            if not rclpy.utilities.is_initialized():
+                rclpy.init()
+                self._rclpy_inited = True
+
+            self._rcl_node = Node(self.ros_node_name)
+            self._rcl_executor = SingleThreadedExecutor()
+            self._rcl_executor.add_node(self._rcl_node)
+
+            self._rcl_thread = threading.Thread(target=self._rcl_executor.spin, name=f"{self.name}-ros2-spin", daemon=True)
+            self._rcl_thread.start()
+
+            self.ros_ok = True
+        except ImportError as e:
+            pass
+        except Exception as e:
+            logger.error(f"[{self.name}] ROS2 setup error: {e}", exc_info=True)
+
 
     async def connect_protocol(self):
         """
@@ -443,6 +486,33 @@ class Application:
             "audio_opened": self.is_audio_channel_opened(),
         }
 
+    def get_ros_node(self):
+        try:
+            return self._rcl_node
+        except AttributeError:
+            return None
+
+    def get_ros_executor(self):
+        try:
+            return self._rcl_executor
+        except AttributeError:
+            return None
+
+    def ros2_subscribe(self, msg_type, topic, callback, qos: int = 10):
+        if getattr(self, "ros_mode", None) != "ros2":
+            raise RuntimeError("ROS2 not initialized")
+        if not getattr(self, "_rcl_node", None):
+            raise RuntimeError("ROS2 node not available")
+        return self._rcl_node.create_subscription(msg_type, topic, callback, qos)
+
+    async def ros_shutdown(self):
+        if self.ros_mode == "ros1":
+            rospy.signal_shutdown("Application shutdown")
+        if self.ros_mode == "ros2":
+            self._rcl_executor.shutdown()
+            self._rcl_thread.join()
+        self.ros_ok = False
+
     async def abort_speaking(self, reason):
         """
         中止语音输出.
@@ -502,6 +572,9 @@ class Application:
             if self.ads_utils:
                 await self.ads_utils.stop()
                 self.ads_utils = None
+            
+            if self.ros_ok:
+                await self.ros_shutdown()
             # 关闭协议（限时，避免阻塞退出）
             if self.protocol:
                 try:

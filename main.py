@@ -60,6 +60,7 @@ async def handle_activation(mode: str) -> bool:
         return False
 
 
+
 async def start_app(mode: str, protocol: str, skip_activation: bool) -> int:
     """
     启动应用的统一入口（在已有事件循环中执行）.
@@ -86,26 +87,7 @@ if __name__ == "__main__":
     try:
         args = parse_args()
         setup_logging()
-
-        # 检测Wayland环境并设置Qt平台插件配置
-        import os
-
-        is_wayland = (
-            os.environ.get("WAYLAND_DISPLAY")
-            or os.environ.get("XDG_SESSION_TYPE") == "wayland"
-        )
-
-        if args.mode == "gui" and is_wayland:
-            # 在Wayland环境下，确保Qt使用正确的平台插件
-            if "QT_QPA_PLATFORM" not in os.environ:
-                # 优先使用wayland插件，失败则回退到xcb（X11兼容层）
-                os.environ["QT_QPA_PLATFORM"] = "wayland;xcb"
-                logger.info("Wayland环境：设置QT_QPA_PLATFORM=wayland;xcb")
-
-            # 禁用一些在Wayland下不稳定的Qt特性
-            os.environ.setdefault("QT_WAYLAND_DISABLE_WINDOWDECORATION", "1")
-            logger.info("Wayland环境检测完成，已应用兼容性配置")
-
+        ### ros 初始化 节点不可重复初始化
         # 统一设置信号处理：忽略 macOS 上可能出现的 SIGTRAP，避免“trace trap”导致进程退出
         try:
             if hasattr(signal, "SIGINT"):
@@ -120,34 +102,7 @@ if __name__ == "__main__":
             # 某些平台/环境不支持设置这些信号，忽略即可
             pass
 
-        if args.mode == "gui":
-            # 在GUI模式下，由main统一创建 QApplication 与 qasync 事件循环
-            try:
-                import qasync
-                from PyQt5.QtWidgets import QApplication
-            except ImportError as e:
-                logger.error(f"GUI模式需要qasync和PyQt5库: {e}")
-                sys.exit(1)
-
-            qt_app = QApplication.instance() or QApplication(sys.argv)
-
-            loop = qasync.QEventLoop(qt_app)
-            asyncio.set_event_loop(loop)
-            logger.info("已在main中创建qasync事件循环")
-
-            # 确保关闭最后一个窗口不会自动退出应用，避免事件环提前停止
-            try:
-                qt_app.setQuitOnLastWindowClosed(False)
-            except Exception:
-                pass
-
-            with loop:
-                exit_code = loop.run_until_complete(
-                    start_app(args.mode, args.protocol, args.skip_activation)
-                )
-        else:
-            # CLI模式使用标准asyncio事件循环
-            exit_code = asyncio.run(
+        exit_code = asyncio.run(
                 start_app(args.mode, args.protocol, args.skip_activation)
             )
 

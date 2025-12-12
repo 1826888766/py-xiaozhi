@@ -22,17 +22,10 @@ class WakeVisionPlugin(Plugin):
         self.min_consecutive_hits: int = 2
         self.cooldown_sec: float = 0.5
         self.no_person_timeout: float = 0.5
-        self.ros_auto_init_node: bool = True
-        self.ros_node_name: str = "visual_wake_dbg"
         self.ros_topic_name: str = "/handel_person"
         self.debug_draw: bool = False
-        self._ros_ok: bool = False
         self._ros_mode: Optional[str] = None
         self._sub = None
-        self._rcl_node = None
-        self._rcl_executor = None
-        self._rcl_thread: Optional[threading.Thread] = None
-        self._rclpy_inited: bool = False
         self._running: bool = False
         self._paused: bool = False
         self._loop_task: Optional[asyncio.Task] = None
@@ -45,76 +38,33 @@ class WakeVisionPlugin(Plugin):
     async def setup(self, app: Any) -> None:
         self.app = app
         self._main_loop = asyncio.get_running_loop()
-        try:
-            import rospy
-            from std_msgs.msg import String as ROS1String
-
-            self._ros_mode = "ros1"
-            if not rospy.core.is_initialized() and self.ros_auto_init_node:
-                rospy.init_node(self.ros_node_name, anonymous=True, disable_signals=True)
-                logger.info(f"[{self.name}] auto-initialized rospy node: {self.ros_node_name}")
-
-            def _on_person_msg_ros1(msg: ROS1String):
-                try:
-                    _ = json.loads(msg.data)
-                    if self._main_loop and self._main_loop.is_running():
-                        self._main_loop.call_soon_threadsafe(self._mark_detected)
-                    else:
-                        self._mark_detected()
-                except Exception as e:
-                    logger.warning(f"[{self.name}] invalid JSON in {self.ros_topic_name}: {e}")
-
-            self._sub = rospy.Subscriber(self.ros_topic_name, ROS1String, _on_person_msg_ros1)
-            self._ros_ok = True
-            logger.info(f"[{self.name}] subscribed to {self.ros_topic_name}")
+        self._ros_mode = self.app.ros_mode
+        if not self.app.ros_ok:
+            logger.warning(f"[{self.name}] ROS not initialized properly")
             return
-        except ImportError:
-            pass
-        except Exception as e:
-            logger.error(f"[{self.name}] ROS1 setup error: {e}", exc_info=True)
+        if self._ros_mode == "ros2":
+            from sensor_msgs.msg import String
+            def _ros2_person_callback(msg: String):
+                self._last_detect_time = time.time()
+                self._detected_person = msg.data == "person"
 
-        try:
-            import rclpy
-            from rclpy.node import Node
-            from std_msgs.msg import String as ROS2String
-            from rclpy.executors import SingleThreadedExecutor
-
-            self._ros_mode = "ros2"
-            if not rclpy.utilities.is_initialized():
-                rclpy.init()
-                self._rclpy_inited = True
-
-            self._rcl_node = Node(self.ros_node_name)
-
-            def _on_person_msg_ros2(msg: ROS2String):
-                try:
-                    _ = json.loads(msg.data)
-                    if self._main_loop and self._main_loop.is_running():
-                        self._main_loop.call_soon_threadsafe(self._mark_detected)
-                    else:
-                        self._mark_detected()
-                except Exception as e:
-                    logger.warning(f"[{self.name}] invalid JSON in {self.ros_topic_name}: {e}")
-
-            self._sub = self._rcl_node.create_subscription(ROS2String, self.ros_topic_name, _on_person_msg_ros2, 10)
-            self._rcl_executor = SingleThreadedExecutor()
-            self._rcl_executor.add_node(self._rcl_node)
-
-            def _spin():
-                try:
-                    self._rcl_executor.spin()
-                except Exception as e:
-                    logger.error(f"[{self.name}] ROS2 executor error: {e}")
-
-            self._rcl_thread = threading.Thread(target=_spin, name=f"{self.name}-ros2-spin", daemon=True)
-            self._rcl_thread.start()
-
-            self._ros_ok = True
-            logger.info(f"[{self.name}] subscribed to {self.ros_topic_name}")
-        except ImportError as e:
-            pass
-        except Exception as e:
-            logger.error(f"[{self.name}] ROS2 setup error: {e}", exc_info=True)
+            self._sub = self.app.ros2_subscribe(
+                msg_type=String,
+                topic=self.ros_topic_name,
+                callback=_ros2_person_callback,
+            )
+        if self._ros_mode == "ros1":
+            import rospy
+            from sensor_msgs.msg import String
+            def _ros1_person_callback(msg: String):
+                self._last_detect_time = time.time()
+                self._detected_person = msg.data == "person"
+                
+            self._sub = rospy.Subscriber(
+                self.ros_topic_name,
+                String,
+                _ros1_person_callback,
+            )
 
     async def start(self) -> None:
         if not self._ros_ok:
