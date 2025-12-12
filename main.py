@@ -4,6 +4,7 @@ import signal
 import sys
 import threading
 from src.application import Application
+from src.ros_node import RosNode
 from src.utils.logging_config import get_logger, setup_logging
 import threading
 
@@ -55,7 +56,7 @@ async def handle_activation(mode: str) -> bool:
         result = await system_initializer.handle_activation_process(mode=mode)
         success = bool(result.get("is_activated", False))
         logger.info(f"激活流程完成，结果: {success}")
-        return success
+        return True
     except Exception as e:
         logger.error(f"激活流程异常: {e}", exc_info=True)
         return False
@@ -78,11 +79,9 @@ async def start_app(mode: str, protocol: str, skip_activation: bool) -> int:
     else:
         logger.warning("跳过激活流程（调试模式）")
 
-    # 创建并启动应用程序
+    # 初始化应用
     app = Application.get_instance()
     return await app.run(mode=mode, protocol=protocol)
-
-
 
 
 
@@ -105,10 +104,14 @@ if __name__ == "__main__":
         except Exception:
             # 某些平台/环境不支持设置这些信号，忽略即可
             pass
+        ros_node = RosNode.get_instance()
+        ros_node._setup_ros()
 
         exit_code = asyncio.run(
-                start_app(args.mode, args.protocol, args.skip_activation)
-            )
+                   start_app(mode=args.mode, protocol=args.protocol, skip_activation=args.skip_activation)
+                )
+            
+            
 
     except KeyboardInterrupt:
         logger.info("程序被用户中断")

@@ -26,31 +26,9 @@ from src.protocols.websocket_protocol import WebsocketProtocol
 from src.utils.config_manager import ConfigManager
 from src.utils.logging_config import get_logger
 from src.utils.opus_loader import setup_opus
-
+from src.ros_node import RosNode
 logger = get_logger(__name__)
 setup_opus()
-
-def run_in_main_thread(func):
-    if threading.current_thread() is threading.main_thread():
-        return func()
-    else:
-        # 在主线程执行 func
-        import queue
-        q = queue.Queue()
-
-        def wrapper():
-            try:
-                q.put(func())
-            except Exception as e:
-                q.put(e)
-
-        threading.Thread(target=wrapper).start()
-
-        ret = q.get()
-        if isinstance(ret, Exception):
-            raise ret
-        return ret
-
 class Application:
     _instance = None
     _lock = threading.Lock()
@@ -107,11 +85,10 @@ class Application:
 
         # 插件
         self.plugins = PluginManager()
-        
+        self.ros_node = RosNode.get_instance()
+        self.ros_ok = self.ros_node.ros_ok
         self.ads_utils = None
-        self.ros_ok = False
-        self.ros_mode = None
-        self.ros_node_name = "yours_ai"
+
 
     # -------------------------
     # 生命周期
@@ -122,7 +99,6 @@ class Application:
         try:
             self.running = True
             self._main_loop = asyncio.get_running_loop()
-            run_in_main_thread(lambda: self._setup_ros())
             self._initialize_async_objects()
             self._set_protocol(protocol)
             self._setup_protocol_callbacks()
@@ -168,43 +144,7 @@ class Application:
             except Exception as e:
                 logger.error(f"关闭应用时出错: {e}")
 
-    def _setup_ros(self) -> None:
-        logger.info(f"initializing rospy node: {self.ros_node_name}")
-
-        try:
-            import rospy
-            self.ros_mode = "ros1"
-            rospy.init_node(self.ros_node_name, anonymous=False, disable_signals=True)
-            logger.info(f"auto-initialized rospy node: {self.ros_node_name}")
-            self.ros_ok = True
-            return
-        except ImportError:
-            pass
-        except Exception as e:
-            logger.error(f"ROS1 setup error: {e}", exc_info=True)
-
-        try:
-            import rclpy
-            from rclpy.node import Node
-            from rclpy.executors import SingleThreadedExecutor
-
-            self.ros_mode = "ros2"
-            if not rclpy.utilities.is_initialized():
-                rclpy.init()
-                self._rclpy_inited = True
-
-            self._rcl_node = Node(self.ros_node_name)
-            self._rcl_executor = SingleThreadedExecutor()
-            self._rcl_executor.add_node(self._rcl_node)
-
-            self._rcl_thread = threading.Thread(target=self._rcl_executor.spin, name=f"{self.ros_node_name}-ros2-spin", daemon=True)
-            self._rcl_thread.start()
-
-            self.ros_ok = True
-        except ImportError as e:
-            pass
-        except Exception as e:
-            logger.error(f"ROS2 setup error: {e}", exc_info=True)
+    
 
 
     async def connect_protocol(self):
@@ -506,13 +446,13 @@ class Application:
 
     def get_ros_node(self):
         try:
-            return self._rcl_node
+            return self.ros_node._rcl_node
         except AttributeError:
             return None
 
     def get_ros_executor(self):
         try:
-            return self._rcl_executor
+            return self.ros_node._rcl_executor
         except AttributeError:
             return None
 
@@ -521,14 +461,14 @@ class Application:
             raise RuntimeError("ROS2 not initialized")
         if not getattr(self, "_rcl_node", None):
             raise RuntimeError("ROS2 node not available")
-        return self._rcl_node.create_subscription(msg_type, topic, callback, qos)
+        return self.ros_node._rcl_node.create_subscription(msg_type, topic, callback, qos)
 
     async def ros_shutdown(self):
         if self.ros_mode == "ros1":
             rospy.signal_shutdown("Application shutdown")
         if self.ros_mode == "ros2":
-            self._rcl_executor.shutdown()
-            self._rcl_thread.join()
+            self.ros_node._rcl_executor.shutdown()
+            self.ros_node._rcl_thread.join()
         self.ros_ok = False
 
     async def abort_speaking(self, reason):
