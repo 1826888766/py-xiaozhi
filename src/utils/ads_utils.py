@@ -46,6 +46,7 @@ class AdsUtils:
 
     async def start(self) -> None:
         self.logger.info(f"开始连接 RabbitMQ 服务器: {self.host}:{self.port}")
+        ## 连接失败自动重试
         self._connection = await self.connect()
         self._channel = await self._connection.channel()
         await self._channel.set_qos(prefetch_count=1)
@@ -189,13 +190,11 @@ class AdsUtils:
         except Exception:
             pass
 
-    async def run_forever(self) -> None:
+    def run_forever(self) -> None:
         self.logger = get_logger(__name__)
         self.logger.info("开始运行广告工具函数")
         try:
-            await self.start()
+            loop = asyncio.get_running_loop()
+            loop.create_task(self.start()) 
         except Exception as e:
             self.logger.error(f"RabbitMQ 连接失败: {e}")
-        finally:
-            await self.close()
-
