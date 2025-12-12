@@ -128,7 +128,6 @@ class Application:
                 # ShortcutsPlugin(),
             )
             # 启动ADS Utils
-            await self.ads_utils.run_forever()
             await self.plugins.setup_all(self)
             # 启动后广播初始状态，确保 UI 就绪时能看到“待命”
             try:
@@ -139,6 +138,7 @@ class Application:
             # 插件：start
             await self.plugins.start_all()
             # 等待关停
+            await self.ads_utils.run_forever()
             await self._wait_shutdown()
             return 0
 
@@ -472,6 +472,7 @@ class Application:
 
     async def ros_shutdown(self):
         if self.ros_mode == "ros1":
+            import rospy
             rospy.signal_shutdown("Application shutdown")
         if self.ros_mode == "ros2":
             self.ros_node._rcl_executor.shutdown()
