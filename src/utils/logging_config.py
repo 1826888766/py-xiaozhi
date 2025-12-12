@@ -21,7 +21,6 @@ def setup_logging():
 
     # 创建根日志记录器
     root_logger = logging.getLogger()
-    root_logger.getLogger('rosout').propagate = False
     root_logger.setLevel(logging.INFO)  # 设置根日志级别
 
     # 清除已有的处理器（避免重复添加）

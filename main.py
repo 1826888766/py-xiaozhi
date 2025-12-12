@@ -89,7 +89,6 @@ if __name__ == "__main__":
     exit_code = 1
     try:
         args = parse_args()
-        setup_logging()
         ### ros 初始化 节点不可重复初始化
         # 统一设置信号处理：忽略 macOS 上可能出现的 SIGTRAP，避免“trace trap”导致进程退出
         try:
@@ -106,7 +105,7 @@ if __name__ == "__main__":
             pass
         ros_node = RosNode.get_instance()
         ros_node._setup_ros()
-
+        setup_logging()
         exit_code = asyncio.run(
                    start_app(mode=args.mode, protocol=args.protocol, skip_activation=args.skip_activation)
                 )
