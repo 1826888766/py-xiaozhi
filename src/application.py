@@ -101,8 +101,6 @@ class Application:
         logger.info("启动Application，protocol=%s", protocol)
         try:
             self.running = True
-            
-            
             self._main_loop = asyncio.get_running_loop()
             self._initialize_async_objects()
             self._set_protocol(protocol)

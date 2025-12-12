@@ -2,7 +2,7 @@ import argparse
 import asyncio
 import signal
 import sys
-
+import threading
 from src.application import Application
 from src.utils.logging_config import get_logger, setup_logging
 
@@ -79,7 +79,9 @@ async def start_app(mode: str, protocol: str, skip_activation: bool) -> int:
 
     # 创建并启动应用程序
     app = Application.get_instance()
-    app._setup_ros()
+    
+    threading.Thread(target=app._setup_ros).start()
+
     return await app.run(mode=mode, protocol=protocol)
 
 
