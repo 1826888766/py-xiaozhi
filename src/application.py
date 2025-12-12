@@ -105,7 +105,7 @@ class Application:
             
             self._main_loop = asyncio.get_running_loop()
             self._initialize_async_objects()
-            self._setup_ros()
+            asyncio.create_task(self._setup_ros())
             self._set_protocol(protocol)
             self._setup_protocol_callbacks()
             # 插件：setup（延迟导入AudioPlugin，确保上面setup_opus已执行）
@@ -150,7 +150,7 @@ class Application:
             except Exception as e:
                 logger.error(f"关闭应用时出错: {e}")
 
-    def _setup_ros(self) -> None:
+    async def _setup_ros(self) -> None:
         try:
             import rospy
             self.ros_mode = "ros1"
