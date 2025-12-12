@@ -154,7 +154,8 @@ class Application:
         try:
             import rospy
             self.ros_mode = "ros1"
-            rospy.init_node(self.ros_node_name, anonymous=False)
+            logger.info(f"initializing rospy node: {self.ros_node_name}")
+            rospy.init_node(self.ros_node_name, anonymous=False, disable_signals=True)
             logger.info(f"auto-initialized rospy node: {self.ros_node_name}")
             self.ros_ok = True
             return
