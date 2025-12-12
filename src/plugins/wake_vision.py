@@ -1,7 +1,5 @@
 import asyncio
-import json
 import time
-import threading
 from typing import Any, Optional
 
 from src.constants.constants import AbortReason
@@ -42,29 +40,6 @@ class WakeVisionPlugin(Plugin):
         if not self.app.ros_ok:
             logger.warning(f"[{self.name}] ROS not initialized properly")
             return
-        if self._ros_mode == "ros2":
-            from sensor_msgs.msg import String
-            def _ros2_person_callback(msg: String):
-                self._last_detect_time = time.time()
-                self._detected_person = msg.data == "person"
-
-            self._sub = self.app.ros2_subscribe(
-                msg_type=String,
-                topic=self.ros_topic_name,
-                callback=_ros2_person_callback,
-            )
-        if self._ros_mode == "ros1":
-            import rospy
-            from sensor_msgs.msg import String
-            def _ros1_person_callback(msg: String):
-                self._last_detect_time = time.time()
-                self._detected_person = msg.data == "person"
-                
-            self._sub = rospy.Subscriber(
-                self.ros_topic_name,
-                String,
-                _ros1_person_callback,
-            )
 
     async def start(self) -> None:
         if not self._ros_ok:
@@ -82,6 +57,29 @@ class WakeVisionPlugin(Plugin):
         logger.info(f"[{self.name}] started")
     
     async def _run_loop(self) -> None:
+        if self._ros_mode == "ros2":
+            from sensor_msgs.msg import String
+            def _ros2_person_callback(msg: String):
+                self._last_detect_time = time.time()
+                self._detected_person = msg.data == "person"
+
+            self._sub = self.app.ros2_subscribe(
+                msg_type=String,
+                topic=self.ros_topic_name,
+                callback=_ros2_person_callback,
+            )
+        if self._ros_mode == "ros1":
+            import rospy
+            from sensor_msgs.msg import String
+            def _ros1_person_callback(msg: String):
+                self._last_detect_time = time.time()
+                self._detected_person = msg.data == "person"
+
+            self._sub = rospy.Subscriber(
+                self.ros_topic_name,
+                String,
+                _ros1_person_callback,
+            )
         try:
             while self._running:
                 if self._paused:
