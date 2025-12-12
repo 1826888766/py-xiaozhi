@@ -152,7 +152,21 @@ class Application:
                 logger.error(f"关闭应用时出错: {e}")
 
     
-
+    async def _send_text_tts(self, text: str):
+        try:
+            # 通过协议触发TTS（与 ApplicationMain 的行为对齐）
+            try:
+                if not self.is_audio_channel_opened():
+                    await self.connect_protocol()
+            except Exception:
+                pass
+            await self.protocol.send_wake_word_detected(text)
+        except Exception:
+            # 兜底：无法TTS时，回退到UI文本
+            try:
+                self.set_chat_message("assistant", text)
+            except Exception:
+                pass
 
     async def connect_protocol(self):
         """
