@@ -37,6 +37,7 @@ class WakeVisionPlugin(Plugin):
         self.app = app
         self._main_loop = asyncio.get_running_loop()
         self._ros_mode = self.app.ros_mode
+        self._ros_ok = self.app.ros_ok
         if not self.app.ros_ok:
             logger.warning(f"[{self.name}] ROS not initialized properly")
             return
@@ -61,7 +62,7 @@ class WakeVisionPlugin(Plugin):
             from sensor_msgs.msg import String
             def _ros2_person_callback(msg: String):
                 self._last_detect_time = time.time()
-                self._detected_person = msg.data == "person"
+                self._detected_person = True
 
             self._sub = self.app.ros2_subscribe(
                 msg_type=String,
@@ -70,10 +71,10 @@ class WakeVisionPlugin(Plugin):
             )
         if self._ros_mode == "ros1":
             import rospy
-            from sensor_msgs.msg import String
+            from std_msgs.msg import String
             def _ros1_person_callback(msg: String):
                 self._last_detect_time = time.time()
-                self._detected_person = msg.data == "person"
+                self._detected_person = True
 
             self._sub = rospy.Subscriber(
                 self.ros_topic_name,
@@ -161,12 +162,10 @@ class WakeVisionPlugin(Plugin):
                 self.app, "start_auto_conversation"
             ):
                 if self.app.is_speaking():
-                    await self.app.abort_speaking(AbortReason.WAKE_WORD_DETECTED)
-                    audio_plugin = self.app.plugins.get_plugin("audio")
-                    if audio_plugin and audio_plugin.codec:
-                        await audio_plugin.codec.clear_audio_queue()
+                    pass
                 else:
                     await self.app.start_auto_conversation()
+                    await self._app.protocol.send_wake_word_detected("看到人了")
         except Exception as e:
             logger.error(f"处理唤醒词检测失败: {e}", exc_info=True)
 
