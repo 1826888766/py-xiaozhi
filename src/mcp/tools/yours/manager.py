@@ -85,7 +85,8 @@ class YoursToolManager:
         add_tool(
             (
                 "yours.get_audio_play",
-                "Play audio task. 按照返回的内容回复，不可再次封装",
+                "Play audio task."
+                "return json format: {\"reason\": \"return the reason\", \"question\": \"user question\"}",
                 audio_play_props,
                 get_audio_play
             )
