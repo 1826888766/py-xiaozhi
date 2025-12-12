@@ -98,6 +98,8 @@ def _create_subscription(topic: str, msg_type: Any, callback):
 
 
 async def _wait_for_message(topic: str, msg_type: Any, timeout: Optional[float] = None):
+    """非阻塞地等待ROS消息到达（适配asyncio）。"""
+    from src.application import Application
     app = Application.get_instance()
     if not app.ros_ok:
         raise RuntimeError("ROS unavailable")
@@ -157,6 +159,34 @@ def command_callback(msg_data: String) -> None:
         _motion_event.set()
 
 
+async def chat_audio_callback(msg: String) -> None:
+    """处理聊天音频文本消息。"""
+    try:
+        from src.application import Application
+        app = Application.get_instance()
+        data = (msg.data or "").strip()
+        if not data:
+            return
+        app._send_text_tts(data)
+        logger.info(f"收到聊天音频文本: {data}")
+        # 这里可以添加处理逻辑，例如将文本转换为语音
+    except Exception as e:
+        logger.error(f"处理聊天音频文本失败: {e}")
+
+async def audio_callback(msg: String) -> None:
+    """处理音频播放消息。"""
+    try:
+        from src.application import Application
+        app = Application.get_instance()
+        data = (msg.data or "").strip()
+        if not data:
+            return
+        app._send_text_tts("请原样复述：{data}")
+        logger.info(f"收到音频播放指令: {data}")
+        # 这里可以添加播放逻辑，例如调用系统音频播放命令
+    except Exception as e:
+        logger.error(f"处理音频播放指令失败: {e}")
+
 # -----------------------------
 # ROS 通信
 # -----------------------------
@@ -167,6 +197,11 @@ try:
 
     lock_publish = _create_publisher("/yours_base/locks_ctrl", UInt32)
     ctrl_publish = _create_publisher("/scheduled_tasks/ctrl", String)
+
+    audio_play_sub = _create_subscription("/audio_play", String, audio_callback)
+
+    chat_audio_text_sub = _create_subscription("/chat_audio_text", String, chat_audio_callback)
+    
 except ImportError as e:
     logger.warning(f"ROS 1 相关模块未安装，无法创建订阅或发布: {e}")
 except Exception as e:
@@ -175,6 +210,8 @@ except Exception as e:
     ctrl_status_sub = None
     lock_publish = None
     ctrl_publish = None
+    audio_play_sub = None
+    chat_audio_text_sub = None
 
 
 # -----------------------------
