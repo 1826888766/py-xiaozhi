@@ -155,13 +155,13 @@ class Application:
             import rospy
             self.ros_mode = "ros1"
             rospy.init_node(self.ros_node_name, anonymous=False, disable_signals=True)
-            logger.info(f"[{self.name}] auto-initialized rospy node: {self.ros_node_name}")
+            logger.info(f"auto-initialized rospy node: {self.ros_node_name}")
             self.ros_ok = True
             return
         except ImportError:
             pass
         except Exception as e:
-            logger.error(f"[{self.name}] ROS1 setup error: {e}", exc_info=True)
+            logger.error(f"ROS1 setup error: {e}", exc_info=True)
 
         try:
             import rclpy
@@ -177,14 +177,14 @@ class Application:
             self._rcl_executor = SingleThreadedExecutor()
             self._rcl_executor.add_node(self._rcl_node)
 
-            self._rcl_thread = threading.Thread(target=self._rcl_executor.spin, name=f"{self.name}-ros2-spin", daemon=True)
+            self._rcl_thread = threading.Thread(target=self._rcl_executor.spin, name=f"{self.ros_node_name}-ros2-spin", daemon=True)
             self._rcl_thread.start()
 
             self.ros_ok = True
         except ImportError as e:
             pass
         except Exception as e:
-            logger.error(f"[{self.name}] ROS2 setup error: {e}", exc_info=True)
+            logger.error(f"ROS2 setup error: {e}", exc_info=True)
 
 
     async def connect_protocol(self):
