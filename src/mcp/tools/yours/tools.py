@@ -167,7 +167,7 @@ def chat_audio_callback(msg: String) -> None:
         data = (msg.data or "").strip()
         if not data:
             return
-        app.spawn(app._send_text_tts(data), name="chat_audio_tts")
+        app._main_loop.create_task(app._send_text_tts(data), name="chat_audio_tts")
         logger.info(f"收到聊天音频文本: {data}")
         # 这里可以添加处理逻辑，例如将文本转换为语音
     except Exception as e:
@@ -181,7 +181,8 @@ def audio_callback(msg: String) -> None:
         data = (msg.data or "").strip()
         if not data:
             return
-        app.spawn(app._send_text_tts(f"请原样复述：{data}"), name="audio_tts")
+        
+        app._main_loop.create_task(app._send_text_tts(f"请原样复述：{data}"), name="audio_tts")
         logger.info(f"收到音频播放指令: {data}")
         # 这里可以添加播放逻辑，例如调用系统音频播放命令
     except Exception as e:
