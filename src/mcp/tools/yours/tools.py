@@ -159,7 +159,7 @@ def command_callback(msg_data: String) -> None:
         _motion_event.set()
 
 
-async def chat_audio_callback(msg: String) -> None:
+def chat_audio_callback(msg: String) -> None:
     """处理聊天音频文本消息。"""
     try:
         from src.application import Application
@@ -167,13 +167,13 @@ async def chat_audio_callback(msg: String) -> None:
         data = (msg.data or "").strip()
         if not data:
             return
-        app._send_text_tts(data)
+        app.spawn(app._send_text_tts(data), name="chat_audio_tts")
         logger.info(f"收到聊天音频文本: {data}")
         # 这里可以添加处理逻辑，例如将文本转换为语音
     except Exception as e:
         logger.error(f"处理聊天音频文本失败: {e}")
 
-async def audio_callback(msg: String) -> None:
+def audio_callback(msg: String) -> None:
     """处理音频播放消息。"""
     try:
         from src.application import Application
@@ -181,7 +181,7 @@ async def audio_callback(msg: String) -> None:
         data = (msg.data or "").strip()
         if not data:
             return
-        app._send_text_tts("请原样复述：{data}")
+        app.spawn(app._send_text_tts(f"请原样复述：{data}"), name="audio_tts")
         logger.info(f"收到音频播放指令: {data}")
         # 这里可以添加播放逻辑，例如调用系统音频播放命令
     except Exception as e:
