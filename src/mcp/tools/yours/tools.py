@@ -61,6 +61,7 @@ def _notify(message: str) -> None:
 # -----------------------------
 
 def _create_publisher(topic: str, msg_type: Any):
+    from src.application import Application
     app = Application.get_instance()
     if not app.ros_ok:
         return None
@@ -78,6 +79,8 @@ def _create_publisher(topic: str, msg_type: Any):
 
 
 def _create_subscription(topic: str, msg_type: Any, callback):
+    from src.application import Application
+
     app = Application.get_instance()
     if not app.ros_ok:
         return None
