@@ -165,7 +165,7 @@ class WakeVisionPlugin(Plugin):
                     pass
                 else:
                     await self.app.start_auto_conversation()
-                    await self._app.protocol.send_wake_word_detected("看到人了")
+                    await self.app.protocol.send_wake_word_detected("看到人了")
         except Exception as e:
             logger.error(f"处理唤醒词检测失败: {e}", exc_info=True)
 
