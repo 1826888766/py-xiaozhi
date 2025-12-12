@@ -150,7 +150,7 @@ class Application:
             except Exception as e:
                 logger.error(f"关闭应用时出错: {e}")
 
-    async def _setup_ros(self) -> None:
+    def _setup_ros(self) -> None:
         try:
             import rospy
             self.ros_mode = "ros1"
