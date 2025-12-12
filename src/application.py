@@ -161,7 +161,7 @@ class Application:
                 await audio_plugin.codec.clear_audio_queue()
             await self.abort_speaking(None)
         if await self.connect_protocol():
-            await self.protocol.send_wake_word_detected(text)
+            await self.protocol.send_mcp_message(text)
     
     async def connect_protocol(self):
         """
