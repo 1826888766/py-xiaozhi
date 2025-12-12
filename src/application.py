@@ -168,7 +168,7 @@ class Application:
             except Exception as e:
                 logger.error(f"关闭应用时出错: {e}")
 
-    async def _setup_ros(self) -> None:
+    def _setup_ros(self) -> None:
         logger.info(f"initializing rospy node: {self.ros_node_name}")
 
         try:
