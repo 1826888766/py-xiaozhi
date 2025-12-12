@@ -374,6 +374,7 @@ async def ads_change(args: Dict[str, Any]) -> str:
 
 async def get_audio_play(args: Dict[str, Any]) -> str:
     """播放音频文件。非阻塞：使用线程执行耗时操作。"""
+    global play_text
     _play_text = f"{play_text}"
     return json.dumps({"success": True, "message": _play_text}, ensure_ascii=False)
 
