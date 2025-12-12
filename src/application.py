@@ -151,23 +151,18 @@ class Application:
             except Exception as e:
                 logger.error(f"关闭应用时出错: {e}")
 
-    
     async def _send_text_tts(self, text: str):
-        try:
-            # 通过协议触发TTS（与 ApplicationMain 的行为对齐）
-            try:
-                if not self.is_audio_channel_opened():
-                    await self.connect_protocol()
-            except Exception:
-                pass
-            await self.protocol.send_wake_word_detected(text)
-        except Exception:
-            # 兜底：无法TTS时，回退到UI文本
-            try:
-                self.set_chat_message("assistant", text)
-            except Exception:
-                pass
-
+        """
+        发送文本到服务端.
+        """
+        if self.app.device_state == DeviceState.SPEAKING:
+            audio_plugin = self.app.plugins.get_plugin("audio")
+            if audio_plugin:
+                await audio_plugin.codec.clear_audio_queue()
+            await self.app.abort_speaking(None)
+        if await self.app.connect_protocol():
+            await self.app.protocol.send_wake_word_detected(text)
+    
     async def connect_protocol(self):
         """
         确保协议通道打开并广播一次协议就绪。返回是否已打开。
@@ -376,6 +371,8 @@ class Application:
                             "state:tts_stop_idle",
                         )
             # 转发给插件
+            if msg_type == "alert":
+                print(json_data)
             self.spawn(self.plugins.notify_incoming_json(json_data), "plugin:on_json")
         except Exception:
             logger.info("收到JSON消息")
