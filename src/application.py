@@ -3,6 +3,12 @@ import sys
 import threading
 from pathlib import Path
 from typing import Any, Awaitable, Optional, Set
+from functools import partial
+if not hasattr(asyncio, "to_thread"):
+    async def _to_thread(func, *args, **kwargs):
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, partial(func, *args, **kwargs))
+    asyncio.to_thread = _to_thread
 
 # 允许作为脚本直接运行：把项目根目录加入 sys.path（src 的上一级）
 try:
