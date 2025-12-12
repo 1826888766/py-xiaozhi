@@ -155,13 +155,13 @@ class Application:
         """
         发送文本到服务端.
         """
-        if self.app.device_state == DeviceState.SPEAKING:
-            audio_plugin = self.app.plugins.get_plugin("audio")
+        if self.device_state == DeviceState.SPEAKING:
+            audio_plugin = self.plugins.get_plugin("audio")
             if audio_plugin:
                 await audio_plugin.codec.clear_audio_queue()
-            await self.app.abort_speaking(None)
-        if await self.app.connect_protocol():
-            await self.app.protocol.send_wake_word_detected(text)
+            await self.abort_speaking(None)
+        if await self.connect_protocol():
+            await self.protocol.send_wake_word_detected(text)
     
     async def connect_protocol(self):
         """
