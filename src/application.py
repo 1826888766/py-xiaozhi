@@ -86,6 +86,7 @@ class Application:
         # 插件
         self.plugins = PluginManager()
         self.ros_node = RosNode.get_instance()
+        self.ros_mode = self.ros_node.ros_mode
         self.ros_ok = self.ros_node.ros_ok
         self.ads_utils = None
 
