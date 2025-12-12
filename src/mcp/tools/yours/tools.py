@@ -14,10 +14,7 @@ import threading
 from typing import Any, Dict, Optional
 
 import aiohttp
-try:
-    from std_msgs.msg import UInt32, String
-except ImportError:
-    pass
+
 from src.utils.logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -161,11 +158,14 @@ def command_callback(msg_data: String) -> None:
 # ROS 通信
 # -----------------------------
 try:
+    from std_msgs.msg import UInt32, String
     open_status_sub = _create_subscription("/yours_base/locks_status", UInt32, open_status_callback)
     ctrl_status_sub = _create_subscription("/scheduled_tasks/ctrl_status", String, command_callback)
 
     lock_publish = _create_publisher("/yours_base/locks_ctrl", UInt32)
     ctrl_publish = _create_publisher("/scheduled_tasks/ctrl", String)
+except ImportError as e:
+    logger.warning(f"ROS 1 相关模块未安装，无法创建订阅或发布: {e}")
 except Exception as e:
     logger.error(f"创建ROS订阅或发布失败: {e}")
     open_status_sub = None
