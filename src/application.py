@@ -102,7 +102,6 @@ class Application:
         try:
             self.running = True
             
-            self._setup_ros()
             
             self._main_loop = asyncio.get_running_loop()
             self._initialize_async_objects()

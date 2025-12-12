@@ -79,6 +79,7 @@ async def start_app(mode: str, protocol: str, skip_activation: bool) -> int:
 
     # 创建并启动应用程序
     app = Application.get_instance()
+    app._setup_ros()
     return await app.run(mode=mode, protocol=protocol)
 
 
