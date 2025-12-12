@@ -30,6 +30,26 @@ from src.utils.opus_loader import setup_opus
 logger = get_logger(__name__)
 setup_opus()
 
+def run_in_main_thread(func):
+    if threading.current_thread() is threading.main_thread():
+        return func()
+    else:
+        # 在主线程执行 func
+        import queue
+        q = queue.Queue()
+
+        def wrapper():
+            try:
+                q.put(func())
+            except Exception as e:
+                q.put(e)
+
+        threading.Thread(target=wrapper).start()
+
+        ret = q.get()
+        if isinstance(ret, Exception):
+            raise ret
+        return ret
 
 class Application:
     _instance = None
@@ -102,7 +122,7 @@ class Application:
         try:
             self.running = True
             self._main_loop = asyncio.get_running_loop()
-            await self.spawn(self._setup_ros(),"main:setup_ros")
+            run_in_main_thread(lambda: self._setup_ros())
             self._initialize_async_objects()
             self._set_protocol(protocol)
             self._setup_protocol_callbacks()

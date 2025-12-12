@@ -5,6 +5,7 @@ import sys
 import threading
 from src.application import Application
 from src.utils.logging_config import get_logger, setup_logging
+import threading
 
 logger = get_logger(__name__)
 
@@ -80,6 +81,9 @@ async def start_app(mode: str, protocol: str, skip_activation: bool) -> int:
     # 创建并启动应用程序
     app = Application.get_instance()
     return await app.run(mode=mode, protocol=protocol)
+
+
+
 
 
 if __name__ == "__main__":
