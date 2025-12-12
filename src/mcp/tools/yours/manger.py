@@ -5,7 +5,7 @@
 
 from typing import Any, Dict
 
-from yours_ai.utils.logging_config import get_logger
+from src.utils.logging_config import get_logger
 
 from .tools import (
     open_lid,
