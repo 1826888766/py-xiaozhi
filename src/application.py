@@ -102,6 +102,7 @@ class Application:
         try:
             self.running = True
             self._main_loop = asyncio.get_running_loop()
+            await self.spawn(self._setup_ros(),"main:setup_ros")
             self._initialize_async_objects()
             self._set_protocol(protocol)
             self._setup_protocol_callbacks()
@@ -147,11 +148,12 @@ class Application:
             except Exception as e:
                 logger.error(f"关闭应用时出错: {e}")
 
-    def _setup_ros(self) -> None:
+    async def _setup_ros(self) -> None:
+        logger.info(f"initializing rospy node: {self.ros_node_name}")
+
         try:
             import rospy
             self.ros_mode = "ros1"
-            logger.info(f"initializing rospy node: {self.ros_node_name}")
             rospy.init_node(self.ros_node_name, anonymous=False, disable_signals=True)
             logger.info(f"auto-initialized rospy node: {self.ros_node_name}")
             self.ros_ok = True
