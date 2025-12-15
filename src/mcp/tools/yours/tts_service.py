@@ -4,6 +4,7 @@ import dashscope
 import pyaudio
 import time
 import base64
+import threading
 import numpy as np
 from typing import Any
 
