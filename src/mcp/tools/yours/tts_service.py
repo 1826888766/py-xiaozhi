@@ -5,7 +5,7 @@ import pyaudio
 import time
 import base64
 import numpy as np
-
+import threading
 
 class TTSService:
     _instance = None
