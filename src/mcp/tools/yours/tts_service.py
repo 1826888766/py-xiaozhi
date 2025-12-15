@@ -82,6 +82,8 @@ class TTSService:
                 self.app.schedule_command_nowait(self.app.abort_speaking)
             if self.app.is_listening():
                 self.app.schedule_command_nowait(self.app.stop_listening_manual)
+            if self.app.is_audio_channel_opened():
+                self.app.schedule_command_nowait(self.app.protocol.close_audio_channel)
         self.app._main_loop.create_task(self.app.plugins.notify_tts_state_changed(state))
         ## 发送一个topic 
         if self.audio_state_pub_ is not None:
@@ -95,7 +97,7 @@ class TTSService:
         if self.play_queue:
             self.send_tts_state_changed("playing")
             audio_data = self.play_queue.pop(0)
-            while self.app.is_speaking() or self.app.is_listening():
+            while self.app.is_speaking() or self.app.is_listening() or self.app.is_keep_listening():
                 time.sleep(0.1)
             self._play(audio_data)
             self._play_next()
