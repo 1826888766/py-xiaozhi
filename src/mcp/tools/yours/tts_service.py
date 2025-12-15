@@ -27,8 +27,7 @@ class TTSService:
         
         self.p = pyaudio.PyAudio()
         dashscope.base_http_api_url = 'https://dashscope.aliyuncs.com/api/v1'
-        from src.application import Application
-        self.app = Application.get_instance()
+        
         # 创建音频流
         self.stream = self.p.open(format=pyaudio.paInt16,
                 channels=1,
@@ -52,6 +51,8 @@ class TTSService:
             self._play_next()
     
     def send_tts_state_changed(self, state):
+        from src.application import Application
+        self.app = Application.get_instance()
         if state == "idle":
             ## 恢复监听\
             self.app.spawn(self.app.start_listening_manual(),"main:listening")
@@ -61,7 +62,7 @@ class TTSService:
                 self.app.spawn(self.app.abort_speaking("tts playing"),"main:abort")
             if self.app.is_listening():
                 self.app.spawn(self.app.stop_listening_manual(),"main:stop")
-        self.app.spawn(self.app.plugins.notify_tts_state_changed(state),"plugins:tts_state")
+        self.app.spawn(self.app.plugins.notify_tts_state_changed(state), "plugin:tts_state")
 
     def _play_next(self):
 
