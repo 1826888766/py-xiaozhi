@@ -5,6 +5,7 @@ import pyaudio
 import time
 import base64
 import numpy as np
+from typing import Any
 
 def _create_publisher(topic: str, msg_type: Any):
     from src.application import Application
