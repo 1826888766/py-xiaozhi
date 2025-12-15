@@ -13,7 +13,6 @@ from .tools import (
     ads_change,
     robot_opertion,
     set_volume,
-    get_audio_play
 )
 
 logger = get_logger(__name__)
@@ -63,35 +62,12 @@ class YoursToolManager:
                 add_tool, PropertyList, Property, PropertyType
             )
 
-            # 注册音频播放工具
-            self._register_audio_play_tool(
-                add_tool, PropertyList, Property, PropertyType
-            )
-
             self._initialized = True
             logger.info("[YoursManager] 小车注册完成")
 
         except Exception as e:
             logger.error(f"[YoursManager] 小车注册失败: {e}", exc_info=True)
             raise
-
-    def _register_audio_play_tool(
-        self, add_tool, PropertyList, Property, PropertyType
-    ):
-        """
-        注册音频播放工具.
-        """
-        audio_play_props = PropertyList()
-        add_tool(
-            (
-                "yours.get_audio_play",
-                "get_audio_play."
-                "return json format: {\"reason\": \"return the reason\", \"question\": \"user question\"}",
-                audio_play_props,
-                get_audio_play
-            )
-        )
-        logger.debug("[YoursManager] 注册音频播放工具成功")
 
     def _register_open_cover_tool(
         self, add_tool, PropertyList, Property, PropertyType

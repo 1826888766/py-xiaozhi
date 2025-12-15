@@ -110,11 +110,3 @@ class TTSService:
         self.stop_play()
         self.stream.close()
         self.p.terminate()
-        
-
-
-if __name__ == "__main__":
-    tts_service = TTSService()
-    tts_service.play_audio("你好")
-    tts_service.stop_play()
-    tts_service.shutdown()
