@@ -52,7 +52,16 @@ class TTSService:
             self._play_next()
     
     def send_tts_state_changed(self, state):
-        self.app.notify_tts_state_changed(state)
+        if state == "idle":
+            ## 恢复监听\
+            self.app.start_listening_manual()
+        if state == "playing":
+            ## 暂停监听
+            if self.app.is_speaking:
+                self.app.abort_speaking("tts playing")
+            if self.app.is_listening:
+                self.app.stop_listening_manual()
+        self.app.plugins.notify_tts_state_changed(state)
 
     def _play_next(self):
 
