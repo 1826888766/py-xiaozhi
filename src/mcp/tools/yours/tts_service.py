@@ -66,9 +66,9 @@ class TTSService:
     def _play_next(self):
 
         if self.play_queue:
+            self.send_tts_state_changed("playing")
             audio_data = self.play_queue.pop(0)
             self._play(audio_data)
-            self.send_tts_state_changed("playing")
         else:
             self.is_playing = False
             self.send_tts_state_changed("idle")
