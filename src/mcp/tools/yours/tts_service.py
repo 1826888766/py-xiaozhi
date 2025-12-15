@@ -62,7 +62,7 @@ class TTSService:
                 self.app.schedule_command_nowait(self.app.abort_speaking)
             if self.app.is_listening():
                 self.app.schedule_command_nowait(self.app.stop_listening_manual)
-        self.app.schedule_command_nowait(self.app.plugins.notify_tts_state_changed(state))
+        self.app._main_loop.create_task(self.app.plugins.notify_tts_state_changed(state))
 
     def _play_next(self):
 
