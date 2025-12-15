@@ -5,7 +5,23 @@ import pyaudio
 import time
 import base64
 import numpy as np
-import threading
+
+def _create_publisher(topic: str, msg_type: Any):
+    from src.application import Application
+    app = Application.get_instance()
+    if not app.ros_ok:
+        return None
+    if app.ros_mode == "ros1":
+        import rospy
+        return rospy.Publisher(topic, msg_type, queue_size=1)
+    if app.ros_mode == "ros2":
+        import rclpy
+        _QoSProfile = rclpy.qos.QoSProfile if rclpy.qos is not None else None
+        qos = _QoSProfile(depth=10) if _QoSProfile is not None else 10
+
+        _ros2_node = app.get_ros_node()
+        return _ros2_node.create_publisher(msg_type, topic, qos)
+    return None
 
 class TTSService:
     _instance = None
@@ -27,7 +43,8 @@ class TTSService:
         
         self.p = pyaudio.PyAudio()
         dashscope.base_http_api_url = 'https://dashscope.aliyuncs.com/api/v1'
-        
+        from std_msgs.msg import String
+        self.audio_state_pub_ = _create_publisher("/audio_play_state", String)
         # 创建音频流
         self.stream = self.p.open(format=pyaudio.paInt16,
                 channels=1,
@@ -40,11 +57,12 @@ class TTSService:
         self.play_queue = []
         self.is_playing = False
     
-    def play_audio(self, text, voice=None, language_type=None):
+    def play_audio(self, data):
+        """播放音频数据。"""
         self.play_queue.append({
-            "text": text,
-            "voice": voice or self.voice,
-            "language_type": language_type or self.language_type,
+            "text": data['text'],
+            "voice": data.get('voice', self.voice),
+            "language_type": data.get('language_type', self.language_type),
         })
         if not self.is_playing:
             self.is_playing = True
@@ -63,6 +81,12 @@ class TTSService:
             if self.app.is_listening():
                 self.app.schedule_command_nowait(self.app.stop_listening_manual)
         self.app._main_loop.create_task(self.app.plugins.notify_tts_state_changed(state))
+        ## 发送一个topic 
+        if self.audio_state_pub_ is not None:
+            from std_msgs.msg import String
+            msg = String()
+            msg.data = state
+            self.audio_state_pub_.publish(msg)
 
     def _play_next(self):
 
