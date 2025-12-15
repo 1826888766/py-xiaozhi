@@ -76,13 +76,17 @@ class TTSService:
     
     def _play(self, play_item):
         response = self.synthesize_speech(play_item)
+        self.stream.start_stream()
         for chunk in response:
             if chunk.output is not None:
                 audio = chunk.output.audio
                 if audio.data is not None:
                     wav_bytes = base64.b64decode(audio.data)
                     audio_np = np.frombuffer(wav_bytes, dtype=np.int16)
+                    # 直接播放音频数据
                     self.stream.write(audio_np.tobytes())
+                if chunk.output.finish_reason == "stop":
+                    print("finish at: {} ", chunk.output.audio.expires_at)
         time.sleep(0.8)
 
     def stop_play(self):
