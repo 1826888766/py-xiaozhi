@@ -180,13 +180,12 @@ def chat_audio_callback(msg: String) -> None:
 def audio_callback(msg: String) -> None:
     """处理音频播放消息。"""
     try:
-        global play_text
         from .tts_service import TTSService
         tts_service = TTSService.get_instance()
         data = (msg.data or "").strip()
         if not data:
             return
-        tts_service.play_audio(play_text)
+        tts_service.play_audio(data)
         logger.info(f"收到音频播放指令: {data}")
         # 这里可以添加播放逻辑，例如调用系统音频播放命令
     except Exception as e:
