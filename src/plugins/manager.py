@@ -76,6 +76,13 @@ class PluginManager:
                 await p.on_device_state_changed(state)
             except Exception:
                 pass
+    
+    async def notify_tts_state_changed(self, state: Any) -> None:
+        for p in list(self._plugins):
+            try:
+                await p.on_tts_state_changed(state)
+            except Exception:
+                pass
 
     async def stop_all(self) -> None:
         # 逆序更稳妥

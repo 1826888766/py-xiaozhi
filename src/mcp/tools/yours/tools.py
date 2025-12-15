@@ -181,13 +181,12 @@ def audio_callback(msg: String) -> None:
     """处理音频播放消息。"""
     try:
         global play_text
-        from src.application import Application
-        app = Application.get_instance()
+        from .tts_service import TTSService
+        tts_service = TTSService.get_instance()
         data = (msg.data or "").strip()
         if not data:
             return
-        play_text = json.dumps({"reason": data}, ensure_ascii=False)
-        app._main_loop.create_task(app._send_text_tts("[mcp][get_audio_play]"), name="audio_tts")
+        tts_service.play_audio(play_text)
         logger.info(f"收到音频播放指令: {data}")
         # 这里可以添加播放逻辑，例如调用系统音频播放命令
     except Exception as e:

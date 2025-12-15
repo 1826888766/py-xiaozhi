@@ -154,9 +154,22 @@ class WakeVisionPlugin(Plugin):
         except Exception:
             pass
 
+    async def on_tts_state_changed(self, state: Any) -> None:
+        """
+        TTS状态变更通知（由应用广播）。
+        """
+        if state == "playing":
+            self._paused = True
+        elif state == "idle":
+            self._paused = False
+
+
+
     async def _on_detected(self, wake_word, full_text):
         # 检测到唤醒词：切到自动对话（根据 AEC 自动选择实时/自动停）
         try:
+            if self._paused:
+                return
             # 若正在说话，交给应用的打断/状态机处理
             if hasattr(self.app, "device_state") and hasattr(
                 self.app, "start_auto_conversation"

@@ -4,6 +4,7 @@
 """
 
 from .manager import get_yours_manager
+from .tts_service import TTSService
 
 from .tools import (
     open_lid,
@@ -13,4 +14,4 @@ from .tools import (
     set_volume
 )
 # 开盖
-__all__ = ["get_yours_manager","robot_opertion","open_lid", "set_volume", "get_battery","ads_change"]
+__all__ = ["get_yours_manager","robot_opertion","open_lid", "set_volume", "get_battery","ads_change", "TTSService"]

@@ -15,6 +15,7 @@ class WakeWordPlugin(Plugin):
         super().__init__()
         self.app = None
         self.detector = None
+        self._paused = False
 
     async def setup(self, app: Any) -> None:
         self.app = app
@@ -35,6 +36,17 @@ class WakeWordPlugin(Plugin):
         except Exception as e:
             logger.error(f"唤醒词插件初始化失败: {e}", exc_info=True)
             self.detector = None
+
+    async def on_tts_state_changed(self, state: Any) -> None:
+        """
+        TTS状态变更通知（由应用广播）。
+        """
+        await asyncio.sleep(0)
+        if state == "playing":
+            self._paused = True
+        elif state == "idle":
+            self._paused = False
+
 
     async def start(self) -> None:
         if not self.detector:
@@ -66,6 +78,9 @@ class WakeWordPlugin(Plugin):
     async def _on_detected(self, wake_word, full_text):
         # 检测到唤醒词：切到自动对话（根据 AEC 自动选择实时/自动停）
         try:
+            if self._paused:
+                return
+
             # 若正在说话，交给应用的打断/状态机处理
             if hasattr(self.app, "device_state") and hasattr(
                 self.app, "start_auto_conversation"

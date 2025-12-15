@@ -50,6 +50,12 @@ class Plugin:
         """
         await asyncio.sleep(0)
 
+    async def on_tts_state_changed(self, state: Any) -> None:
+        """
+        TTS状态变更通知（由应用广播）。
+        """
+        await asyncio.sleep(0)
+
     async def stop(self) -> None:
         """
         插件停止（在应用 shutdown 前调用）。
