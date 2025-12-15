@@ -185,8 +185,9 @@ def audio_callback(msg: String) -> None:
         data = (msg.data or "").strip()
         if not data:
             return
-        tts_service.play_audio(data)
+            
         logger.info(f"收到音频播放指令: {data}")
+        tts_service.play_audio(data)
         # 这里可以添加播放逻辑，例如调用系统音频播放命令
     except Exception as e:
         logger.error(f"处理音频播放指令失败: {e}")

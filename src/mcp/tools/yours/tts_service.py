@@ -55,7 +55,7 @@ class TTSService:
         self.app = Application.get_instance()
         if state == "idle":
             ## 恢复监听\
-            self.app.schedule_command_nowait(self.app.start_listening_manual)
+            self.app.schedule_command_nowait(self.app.start_auto_conversation)
         if state == "playing":
             ## 暂停监听
             if self.app.is_speaking():
@@ -70,6 +70,7 @@ class TTSService:
             self.send_tts_state_changed("playing")
             audio_data = self.play_queue.pop(0)
             self._play(audio_data)
+            self._play_next()
         else:
             self.is_playing = False
             self.send_tts_state_changed("idle")
