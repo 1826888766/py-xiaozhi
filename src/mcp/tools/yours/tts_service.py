@@ -97,8 +97,6 @@ class TTSService:
         if self.play_queue:
             self.send_tts_state_changed("playing")
             audio_data = self.play_queue.pop(0)
-            while self.app.is_speaking() or self.app.is_listening() or self.app.is_keep_listening():
-                time.sleep(0.1)
             self._play(audio_data)
             self._play_next()
         else:
