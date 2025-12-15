@@ -55,14 +55,14 @@ class TTSService:
         self.app = Application.get_instance()
         if state == "idle":
             ## 恢复监听\
-            self.app.spawn(self.app.start_listening_manual(),"main:listening")
+            self.app.schedule_command_nowait(self.app.start_listening_manual)
         if state == "playing":
             ## 暂停监听
             if self.app.is_speaking():
-                self.app.spawn(self.app.abort_speaking("tts playing"),"main:abort")
+                self.app.schedule_command_nowait(self.app.abort_speaking)
             if self.app.is_listening():
-                self.app.spawn(self.app.stop_listening_manual(),"main:stop")
-        self.app.spawn(self.app.plugins.notify_tts_state_changed(state), "plugin:tts_state")
+                self.app.schedule_command_nowait(self.app.stop_listening_manual)
+        self.app.schedule_command_nowait(self.app.plugins.notify_tts_state_changed(state))
 
     def _play_next(self):
 
